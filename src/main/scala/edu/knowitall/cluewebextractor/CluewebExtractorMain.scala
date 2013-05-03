@@ -59,6 +59,7 @@ object CluewebExtractorMain extends App {
   val bp = new extractors.DefaultExtractor()
 
   case class Config(
+    inputType: String = "",  //the type of input, wiki or warc
     inputFiles: Seq[File] = Seq.empty,
     outputDirectory: Option[File] = None) {}
 
@@ -69,6 +70,10 @@ object CluewebExtractorMain extends App {
         val file = new File(path)
         require(file.exists(), "file does not exist: " + path)
         config.copy(inputFiles = (config.inputFiles :+ file))
+      },
+      //take in an argument before the list of filenames
+      opt("input-type", "type of input") { (v: String, config: Config) =>
+        config.copy(inputType = v)
       },
       opt("output-dir", "output directory") { (path: String, config: Config) =>
         val file = new File(path)
@@ -92,7 +97,8 @@ object CluewebExtractorMain extends App {
     // and write the corresponding extracted payload to the output
     for ((inputFile, outputFile) <- files) {
       try {
-        processWarcFile(inputFile, outputFile)
+        //added input type when processing a warc file
+        processWarcFile(inputFile, outputFile, config.inputType)
       } catch {
         case e: Throwable =>
           logger.error("Error while processing warc file: " + inputFile +
@@ -104,15 +110,21 @@ object CluewebExtractorMain extends App {
 
   // Given an input warc file and its corresponding output file, processes the
   // input and writes out the payloads to outputFile.
-  def processWarcFile(inputFile: File, outputFile: File) = {
+  def processWarcFile(inputFile: File, outputFile: File, inputType: String) = {
+    
     val ns = Timing.time {
     Resource.using(openInputStream(inputFile)) { is =>
     Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
 
-      val warcIt = new WarcRecordIterator(
+      //create a new warcIt or wikiIt based on inputType
+      val warcIt = inputType match {
+            case warc => new WarcRecordIterator(
                      new DataInputStream(
                      new BufferedInputStream(is)))
-      logger.info("Successfully created new warc iterator")
+            //case wiki => new WikiIterator()
+          }
+      //print the type of interator created
+      logger.info("Successfully created new "+ inputType +" iterator")
 
       var lastDocument = 0
       var nanos = System.nanoTime()
@@ -133,7 +145,7 @@ object CluewebExtractorMain extends App {
             lastDocument = warcIt.currentDocument
           }
           try {
-            processWarcRecord(warc, writer)
+            processWarcRecord(warc, writer, inputType)
           } catch {
             case e: Throwable =>
               logger.error("Error while processing warc record: " +
@@ -149,10 +161,15 @@ object CluewebExtractorMain extends App {
 
   // Given a warc record, processes it using boilerpipe and writes each
   // sentences out to writer
-  def processWarcRecord(warc: WarcRecord, writer: PrintWriter) = {
+  def processWarcRecord(warc: WarcRecord, writer: PrintWriter, inputType: String) = {
+    
     // piped stores the payload after being passed through boilerpipe
     val piped = try {
-      bp.getText(warc.payload.trim)
+      //run boilerPipe only if it is warc
+      if(inputType.equals("warc"))	
+    	bp.getText(warc.payload.trim)
+      else
+        warc.payload
     } catch {
       case e: Throwable =>
         logger.error("Error during boilerpipe extraction. " +
@@ -209,9 +226,11 @@ object CluewebExtractorMain extends App {
     config.inputFiles.flatMap {
       file =>
       // if it's a directory, search subdirectories
+      val inputType = config.inputType
       if (file.isDirectory) {
         val files: Iterable[File] =
-            FileUtils.listFiles(file, Array("gz", "warc"), true).asScala
+            //changed warc into inputType so it searches for the correct type
+            FileUtils.listFiles(file, Array("gz", inputType), true).asScala
 
         files.flatMap { inputFile =>
           val subdirectory = inputFile.getParentFile.getPath.drop(file.getParentFile.getPath.length).drop(1)

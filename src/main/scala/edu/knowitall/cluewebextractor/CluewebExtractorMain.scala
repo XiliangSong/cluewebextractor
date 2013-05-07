@@ -18,6 +18,8 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.DataInputStream
 import java.util.zip.GZIPInputStream
+import java.io.InputStream
+
 
 /**
  *    Copyright 2013 David H Jung
@@ -115,44 +117,52 @@ object CluewebExtractorMain extends App {
     val ns = Timing.time {
     Resource.using(openInputStream(inputFile)) { is =>
     Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
-
-      //create a new warcIt or wikiIt based on inputType
-      val warcIt = inputType match {
-            case warc => new WarcRecordIterator(
-                     new DataInputStream(
-                     new BufferedInputStream(is)))
-            //case wiki => new WikiIterator()
-          }
+    
+    if(inputType.equals("warc")){
+      val warcIt = new WarcRecordIterator(
+                   new DataInputStream(
+                   new BufferedInputStream(is)))
+          
       //print the type of interator created
       logger.info("Successfully created new "+ inputType +" iterator")
-
+      
       var lastDocument = 0
-      var nanos = System.nanoTime()
-
-      // Iterate over warc records
-      for (warc <- warcIt.flatten) {
-        if (warc.warcType.equals("response") &&
-           !warc.payload.equals("")) {
-          // If this document is a multiple of a thousand, note it in the log
-          // and the current documents / second
-          if (warcIt.currentDocument % 1000 == 0 &&
-              lastDocument != warcIt.currentDocument) {
-            logger.info("Processing document: " + warcIt.currentDocument +
-                        " (" +
-                        ("%.2f" format (warcIt.currentDocument.toDouble /
-                        ((System.nanoTime - nanos).toDouble /
-                        Timing.Seconds.divisor.toDouble))) + " doc/sec)")
-            lastDocument = warcIt.currentDocument
-          }
+	  var nanos = System.nanoTime()
+	  
+	  // Iterate over warc records
+	  for (warc <- warcIt.flatten) {
+	    if (warc.warcType.equals("response") &&
+	        !warc.payload.equals("")) {
+	      // If this document is a multiple of a thousand, note it in the log
+	      // and the current documents / second
+	      if (warcIt.currentDocument % 1000 == 0 &&
+	          lastDocument != warcIt.currentDocument) {
+	        logger.info("Processing document: " + warcIt.currentDocument +
+	                    " (" +
+	                    ("%.2f" format (warcIt.currentDocument.toDouble /
+	                    ((System.nanoTime - nanos).toDouble /
+	                    Timing.Seconds.divisor.toDouble))) + " doc/sec)")
+	        lastDocument = warcIt.currentDocument
+	      }
           try {
             processWarcRecord(warc, writer, inputType)
           } catch {
             case e: Throwable =>
               logger.error("Error while processing warc record: " +
-                  warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
+                            warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
           }
-        }
+        }   
+	  }
+	}else if (inputType.equals("wiki")){
+      val warcIt = new WikiIterator(is)
+      
+      //print the type of interator created
+      logger.info("Successfully created new "+ inputType +" iterator")
+      
+      for (warc <- warcIt) {
+    	  processWarcRecord(warc, writer, inputType)
       }
+	}  
     }}}
 
     logger.info("Processed file '" + inputFile.getName + "' -> '"

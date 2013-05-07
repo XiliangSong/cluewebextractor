@@ -4,20 +4,20 @@ import java.util.Scanner
 import java.io.File
 import java.io.IOException
 import java.util.Calendar
+import java.io.InputStream
 
 
-object WikiIterator{
-	// extends Iterator[Option[WarcRecord]]
-  // When found alone, indicates the start of a new WIKI record.
+class WikiIterator(is: InputStream){
   val wikiType = "WIKI"
 
   // indicates the field that gives current date
   val wikiDate = Calendar.getInstance().getTime().toString()
   
-  //read the XML file and return new warcRecords with the
-  //required parameters
-  object readFile {
-    val scan = new Scanner(new File("text.xml"))
+  readFile
+  
+  //read the XML file and return new warcRecords
+  def readFile{
+    val scan = new Scanner(is)
     while(scan.hasNext()){
       val firstLine = scan.nextLine();
       
@@ -28,12 +28,7 @@ object WikiIterator{
       while(!scan.nextLine().equals("</doc>")){
         payload = payload + scan.nextLine();
       }
-      new WarcRecord(wikiType, wikiArticleID, wikiDate, wikiUrl, payload)
+      new Some(new WarcRecord(wikiType, wikiArticleID, wikiDate, wikiUrl, payload))
     }
-  }
-  
-  def main(args: Array[String]){
-	println(wikiDate);
-
   }
 }

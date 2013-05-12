@@ -24,7 +24,7 @@ To make the jar file, run:
 Usage:
 ------
 
-    java -jar \<jarfile\> \<input\> --output-dir \<output-dir\>
+    java -jar \<jarfile\> \<input\> --output-dir \<output-dir\> --input-type \<warc/wiki\>
 
 Inputs can be either a single file or a directory. If a directory,
 cluewebextractor will find all the `.warc` and `.gz` files inside of that
@@ -34,5 +34,9 @@ directory and extract content from them.
 extracted content. If not used, cluewebextractor will either: not use a
 directory, if input is a single file, or; use the name of the input directory
 as the output directory, if input is a directory.
+
+--input-type is an optional switch that specifies the type of input file 
+cluewebextractor is extracting. It can be either wiki or warc. If not specified,
+it assumes that it is extracting a warc file.
 
 The extractor will print out to an output file for each input file.

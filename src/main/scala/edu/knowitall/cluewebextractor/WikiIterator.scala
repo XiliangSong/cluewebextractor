@@ -4,21 +4,26 @@ import java.util.Scanner
 import java.util.Calendar
 import java.io.InputStream
 
-//import java.io.FileReader
-//import java.io.IOException
-
+/** 
+ *  Yue Wang, 2013
+ */
 class WikiIterator(is: InputStream) extends Iterator[Option[WarcRecord]] {
+  // indicates the field of the response type
   val wikiType = "response"
 
   // indicates the field that gives current date
   val wikiDate = Calendar.getInstance().getTime().toString()
   
+  // create a new scanner taking in a inputStream
   val scan = new Scanner(is)
   
+  // overrides Iterator's hasNext method
   def hasNext(): Boolean = {
 	scan.hasNext()
   }
   
+  // overrides next() method, returns a warcRecord containing 
+  // information of the wiki doc
   def next(): Option[WarcRecord] = {
     if(!hasNext) {
       throw new NoSuchElementException()
@@ -43,12 +48,3 @@ class WikiIterator(is: InputStream) extends Iterator[Option[WarcRecord]] {
   }
 
 }
-
-//object WikiIterator{
-//  def main(args :Array[String]){
-//    val scan = new Scanner(new FileReader("test.xml"))
-//    if (!scan.hasNext())
-//      throw new NoSuchElementException()
-//    println(scan.nextLine())
-//  }
-//}

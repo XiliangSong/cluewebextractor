@@ -118,51 +118,45 @@ object CluewebExtractorMain extends App {
     Resource.using(openInputStream(inputFile)) { is =>
     Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
     
-    if(inputType.equals("warc")){
-      val warcIt : Iterator[Option[WarcRecord]] = new WarcRecordIterator(
+    val warcIt : Iterator[Option[WarcRecord]] = inputType match {
+      case "wiki" => new WikiIterator(new BufferedInputStream(is))
+      
+      case "warc" => new WarcRecordIterator(
                    new DataInputStream(
                    new BufferedInputStream(is)))
-          
-      //print the type of interator created
-      logger.info("Successfully created new "+ inputType +" iterator")
-      
-	  var nanos = System.nanoTime()
-	  var i = 0
+    }
+    
+    //print the type of interator created
+    logger.info("Successfully created new "+ inputType +" iterator")
+   
+    var nanos = System.nanoTime()
+	var i = 0
 	  
-	  // Iterate over warc records
-	  for (warc <- warcIt.flatten) {
-	    if (warc.warcType.equals("response") &&
-	        !warc.payload.equals("")) {
-	      // If this document is a multiple of a thousand, note it in the log
-	      // and the current documents / second
-	      if (i % 1000 == 0 &&
-	          i != 0) {
-	        logger.info("Processing document: " + i +
-	                    " (" +
-	                    ("%.2f" format (i.toDouble /
-	                    ((System.nanoTime - nanos).toDouble /
-	                    Timing.Seconds.divisor.toDouble))) + " doc/sec)")
-	      }
-          try {
-            processWarcRecord(warc, writer, inputType)
-          } catch {
-            case e: Throwable =>
-              logger.error("Error while processing warc record: " +
-                            warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
-          }
-          i = i + 1;
-	    }   
-	  }
-	}else if (inputType.equals("wiki")){
-      val warcIt = new WikiIterator(is)
-      
-      //print the type of interator created
-      logger.info("Successfully created new "+ inputType +" iterator")
-      
-//      for (warc <- warcIt) {
-//    	  processWarcRecord(warc, writer, inputType)
-//      }
-	}  
+	// Iterate over warc records
+	for (warc <- warcIt.flatten) {
+	  if (warc.warcType.equals("response") &&
+	      !warc.payload.equals("")) {
+	    // If this document is a multiple of a thousand, note it in the log
+        // and the current documents / second
+	    if (i % 1000 == 0 &&
+	        i != 0) {
+	      logger.info("Processing document: " + i +
+	                  " (" +
+	                  ("%.2f" format (i.toDouble /
+	                  ((System.nanoTime - nanos).toDouble /
+	                  Timing.Seconds.divisor.toDouble))) + " doc/sec)")
+	    }
+        try {
+          processWarcRecord(warc, writer, inputType)
+        } catch {
+          case e: Throwable =>
+          logger.error("Error while processing warc record: " +
+                       warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
+        }
+        i = i + 1;
+	  }   
+	}
+
     }}}
 
     logger.info("Processed file '" + inputFile.getName + "' -> '"

@@ -119,15 +119,15 @@ object CluewebExtractorMain extends App {
     Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
     
     if(inputType.equals("warc")){
-      val warcIt = new WarcRecordIterator(
+      val warcIt : Iterator[Option[WarcRecord]] = new WarcRecordIterator(
                    new DataInputStream(
                    new BufferedInputStream(is)))
           
       //print the type of interator created
       logger.info("Successfully created new "+ inputType +" iterator")
       
-      var lastDocument = 0
 	  var nanos = System.nanoTime()
+	  var i = 0
 	  
 	  // Iterate over warc records
 	  for (warc <- warcIt.flatten) {
@@ -135,14 +135,13 @@ object CluewebExtractorMain extends App {
 	        !warc.payload.equals("")) {
 	      // If this document is a multiple of a thousand, note it in the log
 	      // and the current documents / second
-	      if (warcIt.currentDocument % 1000 == 0 &&
-	          lastDocument != warcIt.currentDocument) {
-	        logger.info("Processing document: " + warcIt.currentDocument +
+	      if (i % 1000 == 0 &&
+	          i != 0) {
+	        logger.info("Processing document: " + i +
 	                    " (" +
-	                    ("%.2f" format (warcIt.currentDocument.toDouble /
+	                    ("%.2f" format (i.toDouble /
 	                    ((System.nanoTime - nanos).toDouble /
 	                    Timing.Seconds.divisor.toDouble))) + " doc/sec)")
-	        lastDocument = warcIt.currentDocument
 	      }
           try {
             processWarcRecord(warc, writer, inputType)
@@ -151,7 +150,8 @@ object CluewebExtractorMain extends App {
               logger.error("Error while processing warc record: " +
                             warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
           }
-        }   
+          i = i + 1;
+	    }   
 	  }
 	}else if (inputType.equals("wiki")){
       val warcIt = new WikiIterator(is)
@@ -159,9 +159,9 @@ object CluewebExtractorMain extends App {
       //print the type of interator created
       logger.info("Successfully created new "+ inputType +" iterator")
       
-      for (warc <- warcIt) {
-    	  processWarcRecord(warc, writer, inputType)
-      }
+//      for (warc <- warcIt) {
+//    	  processWarcRecord(warc, writer, inputType)
+//      }
 	}  
     }}}
 

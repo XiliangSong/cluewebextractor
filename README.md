@@ -35,7 +35,7 @@ extracted content. If not used, cluewebextractor will either: not use a
 directory, if input is a single file, or; use the name of the input directory
 as the output directory, if input is a directory.
 
---input-type is an optional switch that specifies the type of input file 
+ --input-type is an optional switch that specifies the type of input file 
 cluewebextractor is extracting. It can be either wiki or warc. If not specified,
 it assumes that it is extracting a warc file.
 

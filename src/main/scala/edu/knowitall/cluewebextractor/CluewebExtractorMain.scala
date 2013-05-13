@@ -20,7 +20,6 @@ import java.io.DataInputStream
 import java.util.zip.GZIPInputStream
 import java.io.InputStream
 
-
 /**
  *    Copyright 2013 David H Jung
  *
@@ -61,7 +60,7 @@ object CluewebExtractorMain extends App {
   val bp = new extractors.DefaultExtractor()
 
   case class Config(
-    inputType: String = "",  //the type of input, wiki or warc
+    inputType: String = "", //the type of input, wiki or warc
     inputFiles: Seq[File] = Seq.empty,
     outputDirectory: Option[File] = None) {}
 
@@ -104,7 +103,7 @@ object CluewebExtractorMain extends App {
       } catch {
         case e: Throwable =>
           logger.error("Error while processing warc file: " + inputFile +
-              ". Skipping file. \n\t" + e + ": " + e.getStackTraceString);
+            ". Skipping file. \n\t" + e + ": " + e.getStackTraceString);
       }
 
     }
@@ -113,72 +112,74 @@ object CluewebExtractorMain extends App {
   // Given an input warc file and its corresponding output file, processes the
   // input and writes out the payloads to outputFile.
   def processWarcFile(inputFile: File, outputFile: File, inputType: String) = {
-    
-    val ns = Timing.time {
-    Resource.using(openInputStream(inputFile)) { is =>
-    Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
-    
-    val warcIt : Iterator[Option[WarcRecord]] = inputType match {
-      case "wiki" => new WikiIterator(new BufferedInputStream(is))
-      
-      case "warc" => new WarcRecordIterator(
-                   new DataInputStream(
-                   new BufferedInputStream(is)))
-    }
-    
-    //print the type of interator created
-    logger.info("Successfully created new "+ inputType +" iterator")
-   
-    var nanos = System.nanoTime()
-	var i = 0
-	  
-	// Iterate over warc records
-	for (warc <- warcIt.flatten) {
-	  if (warc.warcType.equals("response") &&
-	      !warc.payload.equals("")) {
-	    // If this document is a multiple of a thousand, note it in the log
-        // and the current documents / second
-	    if (i % 1000 == 0 &&
-	        i != 0) {
-	      logger.info("Processing document: " + i +
-	                  " (" +
-	                  ("%.2f" format (i.toDouble /
-	                  ((System.nanoTime - nanos).toDouble /
-	                  Timing.Seconds.divisor.toDouble))) + " doc/sec)")
-	    }
-        try {
-          processWarcRecord(warc, writer, inputType)
-        } catch {
-          case e: Throwable =>
-          logger.error("Error while processing warc record: " +
-                       warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
-        }
-        i = i + 1;
-	  }   
-	}
 
-    }}}
+    val ns = Timing.time {
+      Resource.using(openInputStream(inputFile)) { is =>
+        Resource.using(new PrintWriter(outputFile, "UTF8")) { writer =>
+
+          val warcIt: Iterator[Option[WarcRecord]] = inputType match {
+            case "wiki" => new WikiIterator(new BufferedInputStream(is))
+
+            case "warc" => new WarcRecordIterator(
+              new DataInputStream(
+                new BufferedInputStream(is)))
+          }
+
+          //print the type of interator created
+          logger.info("Successfully created new " + inputType + " iterator")
+
+          var nanos = System.nanoTime()
+          var i = 0
+
+          // Iterate over warc records
+          for (warc <- warcIt.flatten) {
+            if (warc.warcType.equals("response") &&
+              !warc.payload.equals("")) {
+              // If this document is a multiple of a thousand, note it in the log
+              // and the current documents / second
+              if (i % 1000 == 0 &&
+                i != 0) {
+                logger.info("Processing document: " + i +
+                  " (" +
+                  ("%.2f" format (i.toDouble /
+                    ((System.nanoTime - nanos).toDouble /
+                      Timing.Seconds.divisor.toDouble))) + " doc/sec)")
+              }
+              try {
+                processWarcRecord(warc, writer, inputType)
+              } catch {
+                case e: Throwable =>
+                  logger.error("Error while processing warc record: " +
+                    warc.warcTrecId + "\n\t" + e + ": " + e.getStackTraceString)
+              }
+              i = i + 1;
+            }
+          }
+
+        }
+      }
+    }
 
     logger.info("Processed file '" + inputFile.getName + "' -> '"
-        + outputFile.getName + "' in: " + Timing.Seconds.format(ns))
+      + outputFile.getName + "' in: " + Timing.Seconds.format(ns))
   }
 
   // Given a warc record, processes it using boilerpipe and writes each
   // sentences out to writer
   def processWarcRecord(warc: WarcRecord, writer: PrintWriter, inputType: String) = {
-    
+
     // piped stores the payload after being passed through boilerpipe
     val piped = try {
       //run boilerPipe only if it is warc
-      if(inputType.equals("warc"))	
-    	bp.getText(warc.payload.trim)
+      if (inputType.equals("warc"))
+        bp.getText(warc.payload.trim)
       else
         warc.payload
     } catch {
       case e: Throwable =>
         logger.error("Error during boilerpipe extraction. " +
-                     "Skipping document: " + warc.warcTrecId + "\n\t" +
-                     e + ": " + e.getStackTraceString)
+          "Skipping document: " + warc.warcTrecId + "\n\t" +
+          e + ": " + e.getStackTraceString)
         ""
     }
 
@@ -193,8 +194,8 @@ object CluewebExtractorMain extends App {
       } catch {
         case e: Throwable =>
           logger.error("Error while processing sentence " +
-              warc.warcTrecId + ":" + i + "\n\t" + e + ": " +
-              e.getStackTraceString)
+            warc.warcTrecId + ":" + i + "\n\t" + e + ": " +
+            e.getStackTraceString)
       }
     }
   }
@@ -202,18 +203,18 @@ object CluewebExtractorMain extends App {
   // Processes a given warc sentence with some filters. If the sentence passes
   // through the filters, it gets written into writer.
   def processSentence(sent: String,
-                      warc: WarcRecord,
-                      writer: PrintWriter,
-                      i: Int) = {
+    warc: WarcRecord,
+    writer: PrintWriter,
+    i: Int) = {
     val sentence = garbager.removeWhitespace(sent)
     if (!garbager.containsHtml(sentence) &&
-        !garbager.tooLong(sentence) &&
-        !garbager.tooShort(sentence)) {
+      !garbager.tooLong(sentence) &&
+      !garbager.tooShort(sentence)) {
       writer.println(warc.warcTrecId + "\t" +
-                     warc.warcUri + "\t" +
-                     warc.warcDate + "\t" +
-                     i + "\t" +
-                     sentence)
+        warc.warcUri + "\t" +
+        warc.warcDate + "\t" +
+        i + "\t" +
+        sentence)
       true
     } else {
       false
@@ -229,45 +230,45 @@ object CluewebExtractorMain extends App {
 
     config.inputFiles.flatMap {
       file =>
-      // if it's a directory, search subdirectories
-      val inputType = config.inputType
-      if (file.isDirectory) {
-        val files: Iterable[File] =
+        // if it's a directory, search subdirectories
+        val inputType = config.inputType
+        if (file.isDirectory) {
+          val files: Iterable[File] =
             //changed warc into inputType so it searches for the correct type
             FileUtils.listFiles(file, Array("gz", inputType), true).asScala
 
-        files.flatMap { inputFile =>
-          val subdirectory = inputFile.getParentFile.getPath.drop(file.getParentFile.getPath.length).drop(1)
+          files.flatMap { inputFile =>
+            val subdirectory = inputFile.getParentFile.getPath.drop(file.getParentFile.getPath.length).drop(1)
 
-          // build the output file
-          val outputDirectory = config.outputDirectory match {
-            case Some(dir) => new File(dir, subdirectory)
-            case None => new File(subdirectory)
+            // build the output file
+            val outputDirectory = config.outputDirectory match {
+              case Some(dir) => new File(dir, subdirectory)
+              case None => new File(subdirectory)
+            }
+
+            // create the file's parent directory if it doesn't exist
+            outputDirectory.mkdirs
+
+            val outputFileName = makeOutputFileName(inputFile)
+            val outputFile = new File(outputDirectory, outputFileName)
+
+            // if the output file already exists, skip by returning None
+            if (outputFile.exists) {
+              None
+            } else {
+              Some(inputFile, outputFile)
+            }
           }
 
-          // create the file's parent directory if it doesn't exist
-          outputDirectory.mkdirs
-
-          val outputFileName = makeOutputFileName(inputFile)
-          val outputFile = new File(outputDirectory, outputFileName)
-
-          // if the output file already exists, skip by returning None
-          if (outputFile.exists) {
-            None
-          } else {
-            Some(inputFile, outputFile)
+        } else {
+          // the user input a simple .warc file
+          val outputFileName = makeOutputFileName(file)
+          val outputFile = config.outputDirectory match {
+            case Some(dir) => new File(dir, outputFileName)
+            case None => new File(outputFileName)
           }
+          Some(file, outputFile)
         }
-
-      } else {
-        // the user input a simple .warc file
-        val outputFileName = makeOutputFileName(file)
-        val outputFile = config.outputDirectory match {
-          case Some(dir) => new File(dir, outputFileName)
-          case None => new File(outputFileName)
-        }
-        Some(file, outputFile)
-      }
     }
   }
 

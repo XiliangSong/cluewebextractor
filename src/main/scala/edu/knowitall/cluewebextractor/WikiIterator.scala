@@ -4,7 +4,7 @@ import java.util.Scanner
 import java.util.Calendar
 import java.io.InputStream
 
-/** 
+/**
  *  Yue Wang, 2013
  */
 class WikiIterator(is: InputStream) extends Iterator[Option[WarcRecord]] {
@@ -13,38 +13,38 @@ class WikiIterator(is: InputStream) extends Iterator[Option[WarcRecord]] {
 
   // indicates the field that gives current date
   val wikiDate = Calendar.getInstance().getTime().toString()
-  
+
   // create a new scanner taking in a inputStream
   val scan = new Scanner(is)
-  
+
   // overrides Iterator's hasNext method
   def hasNext(): Boolean = {
-	scan.hasNext()
+    scan.hasNext()
   }
-  
+
   // overrides next() method, returns a warcRecord containing 
   // information of the wiki doc
   def next(): Option[WarcRecord] = {
-    if(!hasNext) {
+    if (!hasNext) {
       throw new NoSuchElementException()
     }
     val firstLine = scan.nextLine()
-     
+
     val regex = """<doc id="(\S*)" url="(\S*)" title="(.*)">""".r
-	val regex(wikiArticleID, wikiUrl, wikiTitle) = firstLine
-	  
-	var notEndOfDoc = true
-	var payload = ""
-	  
-	while(notEndOfDoc){
-	  val line = scan.nextLine()
-	  if(line.equals("</doc>"))
-	    notEndOfDoc = false
-	  else
-	    payload = payload + line
-	}
-    
-    new Some(new WarcRecord(wikiType, wikiArticleID, wikiDate, wikiUrl, payload))
+    val regex(wikiArticleID, wikiUrl, wikiTitle) = firstLine
+
+    var EndOfDoc = false
+    var payload = ""
+
+    while (!EndOfDoc) {
+      val line = scan.nextLine()
+      if (line.equals("</doc>"))
+        EndOfDoc = true
+      else
+        payload = payload + line
+    }
+
+    Some(new WarcRecord(wikiType, wikiArticleID, wikiDate, wikiUrl, payload))
   }
 
 }

@@ -119,8 +119,8 @@ class WarcRecordIterator(dis: DataInputStream) extends Iterator[Option[WarcRecor
     } catch {
       case e: Throwable =>
         logger.error("Exception caught while reading payload from .warc " +
-                     "file.\n\tCurrent document: " + currentDocument + "\n\t" +
-                     e + ": " + e.getStackTraceString)
+          "file.\n\tCurrent document: " + currentDocument + "\n\t" +
+          e + ": " + e.getStackTraceString)
         valid = false;
         byteBuffer = new Array[Byte](0)
         contentLength = 0
@@ -128,7 +128,7 @@ class WarcRecordIterator(dis: DataInputStream) extends Iterator[Option[WarcRecor
 
     currentDocument += 1
     new Some(WarcRecord(warcType, warcTrecId, warcDate, warcUri,
-                        new String(byteBuffer, 0, contentLength, "UTF8")))
+      new String(byteBuffer, 0, contentLength, "UTF8")))
 
   }
 
@@ -140,8 +140,8 @@ class WarcRecordIterator(dis: DataInputStream) extends Iterator[Option[WarcRecor
     } catch {
       case e: Throwable =>
         logger.error("Error while reading next line from .warc file.\n\t" +
-                     "Current document: " + currentDocument + "\n\t" +
-                     e + ": " + e.getStackTraceString)
+          "Current document: " + currentDocument + "\n\t" +
+          e + ": " + e.getStackTraceString)
         valid = false;
         ""
     }

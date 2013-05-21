@@ -47,6 +47,9 @@ Extract Wikipedia:
 To get the articles from Wikipedia, the first step is to download pages-articles.xml.bz2
 file from Wikipedia Database Page. 
 
+Instructions can be found at this website:
+http://medialab.di.unipi.it/wiki/Wikipedia_Extractor
+
 To filter out the Wiki Mark-Up, run WikiExtractor.py, located in rv-n15,
 /scratch/usr/wy1024/wiki_page_articles/wikiExtractor
 
